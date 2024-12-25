@@ -1,95 +1,31 @@
 #include <algorithm>
+#include <cstdint>
 
 #include <rpi-rgb-led-matrix/include/graphics.h>
 #include <rpi-rgb-led-matrix/include/led-matrix.h>
 
+#include "graphics.h"
+#include "tetromino.h"
+
 using rgb_matrix::RGBMatrix;
 
-enum Color {
-    Empty,
-    Red,
-    Green,
-    Blue,
-    Yellow
-};
+namespace tetris {
 
 rgb_matrix::Color color_to_rgb(Color color) {
     switch (color) {
     case Empty:
         return {0, 0, 0};
     case Red:
-        return {255, 0, 0};
+        return {96, 0, 0};
     case Green:
-        return {0, 255, 0};
+        return {0, 72, 2};
     case Blue:
-        return {0, 0, 255};
+        return {0, 0, 96};
     case Yellow:
-        return {255, 188, 0};
+        return {96, 72, 0};
     }
     throw 1;
 }
-
-Color FIELD[20][10] = {
-#define R Red,
-#define G Green,
-#define B Blue,
-#define Y Yellow,
-    Y G Y Y R R R R Y Y
-    Y G G Y Y B B Y Y G
-    Y G B R R B B R B G
-    Y B B R R Y R R B G
-    G B R Y Y Y R B B G
-    G G R R R G G Y Y Y
-    B G Y B B G R R Y R
-    B B Y B B G B R R R
-    B G Y Y R R B Y Y R
-    G G G R R B B Y Y R
-
-    Y G Y Y R R R R Y Y
-    Y G G Y Y B B Y Y G
-    Y G B R R B B R B G
-    Y B B R R Y R R B G
-    G B R Y Y Y R B B G
-    G G R R R G G Y Y Y
-    B G Y B B G R R Y R
-    B B Y B B G B R R R
-    B G Y Y R R B Y Y R
-    G G G R R B B Y Y Red
-#undef R
-#undef G
-#undef B
-#undef Y
-};
-
-class BlockField {
-public:
-    BlockField() {
-        std::fill_n(&m_rows[0][0], 10 * 20, Empty);
-    }
-
-    BlockField(const Color* colors) {
-        std::copy(colors, colors + 10 * 20, &m_rows[0][0]);
-    }
-
-    size_t width() const {
-        return 10;
-    }
-
-    size_t height() const {
-        return 20;
-    }
-
-    Color* operator[](size_t index) {
-        return m_rows[index];
-    }
-
-    const Color* operator[](size_t index) const {
-        return m_rows[index];
-    }
-
-private:
-    Color m_rows[20][10];
-};
 
 class Renderer {
 public:
@@ -110,7 +46,7 @@ public:
                 const rgb_matrix::Color rgb = color_to_rgb(color);
                 rgb_matrix::Color colors[9];
                 std::fill_n(colors, 9, rgb);
-                m_canvas->SetPixels(3 * i + 1, 3 * j + 1, 3, 3, colors);
+                m_canvas->SetPixels(3 * i + 3, 3 * (field.width() - 1 - j) + 1, 3, 3, colors);
             }
         }
     }
@@ -144,10 +80,33 @@ int main() {
 
     Renderer renderer(matrix);
 
+    uint64_t raw_frame = 0;
+    const uint64_t refresh_ratio = 3;
     while (true) {
-        BlockField blocks(&FIELD[0][0]);
+        const uint64_t frame = raw_frame / refresh_ratio;
+
+        BlockField blocks;
+
+        Orientation orientation = static_cast<Orientation>((frame / 60) % ORIENTATION_MAX);
+        blocks.paint_tetromino(0, 0, {LeftS, Red, orientation});
+        blocks.paint_tetromino(0, 3, {RightS, Green, orientation});
+        blocks.paint_tetromino(0, 6, {LeftL, Blue, orientation});
+        blocks.paint_tetromino(3, 0, {RightL, Yellow, orientation});
+        blocks.paint_tetromino(3, 3, {Square, Red, orientation});
+        blocks.paint_tetromino(3, 6, {T, Green, orientation});
+        blocks.paint_tetromino(6, 0, {I, Blue, orientation});
 
         renderer.render(blocks);
         renderer.display();
+
+        raw_frame++;
     }
+
+    return 0;
+}
+
+}
+
+int main() {
+    return tetris::main();
 }
