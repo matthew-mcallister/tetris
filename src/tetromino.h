@@ -1,5 +1,5 @@
-#ifndef TETRIS_SHAPE_H
-#define TETRIS_SHAPE_H
+#ifndef TETRIS_TETROMINO_H
+#define TETRIS_TETROMINO_H
 
 #include <cassert>
 #include <cstdint>

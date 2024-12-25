@@ -12,7 +12,7 @@ set_target_properties(RpiRgbLedMatrix PROPERTIES IMPORTED_LOCATION "${CMAKE_CURR
 
 
 add_executable(tetris
-    src/graphics.cpp
+    src/block_field.cpp
     src/main.cpp
     src/tetromino.cpp
 )
